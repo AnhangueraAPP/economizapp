@@ -4,6 +4,7 @@ import { MonthlyBalance, CategorySummary } from "@/types/finance";
 import { useFinance } from "@/context/FinanceContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 
 type DashboardStatsProps = {
   monthlyBalance: MonthlyBalance;
@@ -77,8 +78,12 @@ export const DashboardStats = ({ monthlyBalance }: DashboardStatsProps) => {
                 <span className="text-xs text-muted-foreground">Despesas vs. Receitas</span>
                 <span className="text-xs font-medium">{expensePercentage.toFixed(0)}%</span>
               </div>
-              <Progress value={expensePercentage} className="h-2" 
-                indicatorClassName={expensePercentage > 100 ? "bg-finance-expense" : "bg-finance-primary"}
+              <Progress 
+                value={expensePercentage} 
+                className={cn(
+                  "h-2",
+                  expensePercentage > 100 ? "bg-finance-expense" : "bg-finance-primary"
+                )} 
               />
             </div>
           </div>

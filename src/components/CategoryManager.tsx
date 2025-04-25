@@ -60,7 +60,11 @@ export const CategoryManager = () => {
     if (editingCategory) {
       editCategory(editingCategory.id, values);
     } else {
-      addCategory(values);
+      // Ensure all required properties are provided to addCategory
+      addCategory({
+        name: values.name,
+        color: values.color
+      });
     }
     
     resetAndClose();
