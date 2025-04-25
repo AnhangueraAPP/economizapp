@@ -8,6 +8,10 @@ import {
 import { useAuth } from './AuthContext';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from '@/integrations/supabase/types';
+
+type SupabaseCategoria = Database['public']['Tables']['categorias']['Row'];
+type SupabaseTransacao = Database['public']['Tables']['transacoes']['Row'];
 
 type FinanceContextType = {
   transacoes: Transacao[];
@@ -26,7 +30,6 @@ type FinanceContextType = {
   setMesAtual: (mes: number) => void;
   setAnoAtual: (ano: number) => void;
   getTransacoesRecorrentes: () => Transacao[];
-  // API para componentes em inglês
   transactions: Transacao[];
   addTransaction: (transaction: any) => Promise<void>;
   editTransaction: (id: string, transaction: any) => Promise<void>;
@@ -57,7 +60,6 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
 
-  // Carregar categorias do usuário
   useEffect(() => {
     if (user) {
       const carregarCategorias = async () => {
@@ -76,10 +78,14 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
-        // Converter os dados do banco para o formato das categorias
-        const categoriasConvertidas = data.map(c => ({
-          ...c,
-          tipo: c.tipo as TipoTransacao
+        const categoriasConvertidas: Categoria[] = (data as SupabaseCategoria[]).map(c => ({
+          id: c.id,
+          nome: c.nome,
+          cor: c.cor,
+          icone: c.icone || undefined,
+          tipo: c.tipo as TipoTransacao,
+          padrao: c.padrao || false,
+          usuario_id: c.usuario_id || undefined
         }));
 
         setCategorias(categoriasConvertidas);
@@ -89,7 +95,6 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, toast]);
 
-  // Carregar transações do usuário
   useEffect(() => {
     if (user) {
       const carregarTransacoes = async () => {
@@ -108,11 +113,16 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
-        const transacoesConvertidas = data.map(t => ({
-          ...t,
-          data: new Date(t.data),
+        const transacoesConvertidas: Transacao[] = (data as SupabaseTransacao[]).map(t => ({
+          id: t.id,
+          valor: Number(t.valor),
           tipo: t.tipo as TipoTransacao,
-          frequencia_recorrente: t.frequencia_recorrente as FrequenciaRecorrente | undefined
+          descricao: t.descricao,
+          data: new Date(t.data),
+          categoria_id: t.categoria_id || '',
+          recorrente: t.recorrente || false,
+          frequencia_recorrente: t.frequencia_recorrente as FrequenciaRecorrente | undefined,
+          usuario_id: t.usuario_id || undefined
         }));
 
         setTransacoes(transacoesConvertidas);
@@ -125,10 +135,9 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
   const adicionarTransacao = async (transacao: Omit<Transacao, 'id' | 'usuario_id'>) => {
     if (!user) return;
 
-    // Converter data para formato ISO string para o Supabase
     const transacaoParaInserir = {
       ...transacao,
-      data: transacao.data.toISOString().split('T')[0], // formato YYYY-MM-DD
+      data: transacao.data.toISOString().split('T')[0],
       usuario_id: user.id
     };
 
@@ -147,12 +156,16 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Converter data de volta para objeto Date para a UI
-    const novaTransacao = {
-      ...data,
-      data: new Date(data.data),
+    const novaTransacao: Transacao = {
+      id: data.id,
+      valor: Number(data.valor),
       tipo: data.tipo as TipoTransacao,
-      frequencia_recorrente: data.frequencia_recorrente as FrequenciaRecorrente | undefined
+      descricao: data.descricao,
+      data: new Date(data.data),
+      categoria_id: data.categoria_id || '',
+      recorrente: data.recorrente || false,
+      frequencia_recorrente: data.frequencia_recorrente as FrequenciaRecorrente | undefined,
+      usuario_id: data.usuario_id || undefined
     };
 
     setTransacoes(prev => [novaTransacao, ...prev]);
@@ -164,7 +177,6 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const editarTransacao = async (id: string, transacao: Partial<Omit<Transacao, 'id' | 'usuario_id'>>) => {
-    // Se tiver data, converter para formato ISO string
     const transacaoParaAtualizar = {
       ...transacao,
       ...(transacao.data && { data: transacao.data.toISOString().split('T')[0] })
@@ -245,9 +257,14 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     
-    const novaCategoria = {
-      ...data,
-      tipo: data.tipo as TipoTransacao
+    const novaCategoria: Categoria = {
+      id: data.id,
+      nome: data.nome,
+      cor: data.cor,
+      icone: data.icone || undefined,
+      tipo: data.tipo as TipoTransacao,
+      padrao: data.padrao || false,
+      usuario_id: data.usuario_id || undefined
     };
     
     setCategorias(prev => [...prev, novaCategoria]);
@@ -344,7 +361,6 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
     
     const valorTotal = transacoesMensais.reduce((sum, t) => sum + t.valor, 0);
     
-    // Agrupar por categoria
     const valoresPorCategoria = new Map<string, number>();
     transacoesMensais.forEach(transacao => {
       const { categoria_id, valor } = transacao;
@@ -352,7 +368,6 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
       valoresPorCategoria.set(categoria_id, atual + valor);
     });
     
-    // Converter para array e calcular porcentagens
     const sumario: CategoriaSumario[] = Array.from(valoresPorCategoria.entries())
       .map(([categoria_id, valor]) => ({
         categoria_id,
@@ -369,13 +384,11 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addTransaction = async (transaction: any) => {
-    // Converter de formato inglês para português
     const transacao = englishToTransacao(transaction);
     return await adicionarTransacao(transacao);
   };
 
   const editTransaction = async (id: string, transaction: any) => {
-    // Converter propriedades em inglês para português
     const transacao: Partial<Omit<Transacao, 'id' | 'usuario_id'>> = {};
     
     if (transaction.amount !== undefined) transacao.valor = transaction.amount;
@@ -395,7 +408,6 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addCategory = async (category: any) => {
-    // Converter de formato inglês para português
     const categoria: Omit<Categoria, 'id' | 'usuario_id'> = {
       nome: category.name,
       cor: category.color,
@@ -408,7 +420,6 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const editCategory = async (id: string, category: any) => {
-    // Converter propriedades em inglês para português
     const categoria: Partial<Omit<Categoria, 'id' | 'usuario_id'>> = {};
     
     if (category.name !== undefined) categoria.nome = category.name;
@@ -425,7 +436,6 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getCategorySummary = (month: number, year: number, type: TipoTransacao | 'income' | 'expense') => {
-    // Converter 'income'/'expense' para 'receita'/'despesa' se necessário
     const tipoTransacao = typeof type === 'string' && (type === 'income' || type === 'expense') 
       ? mapTypeToTipo(type) 
       : type as TipoTransacao;
@@ -451,7 +461,6 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
       setMesAtual,
       setAnoAtual,
       getTransacoesRecorrentes,
-      // Aliases para compatibilidade
       transactions: transacoes,
       addTransaction,
       editTransaction,

@@ -9,7 +9,80 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      categorias: {
+        Row: {
+          cor: string
+          icone: string | null
+          id: string
+          nome: string
+          padrao: boolean | null
+          tipo: string
+          usuario_id: string | null
+        }
+        Insert: {
+          cor: string
+          icone?: string | null
+          id?: string
+          nome: string
+          padrao?: boolean | null
+          tipo: string
+          usuario_id?: string | null
+        }
+        Update: {
+          cor?: string
+          icone?: string | null
+          id?: string
+          nome?: string
+          padrao?: boolean | null
+          tipo?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
+      transacoes: {
+        Row: {
+          categoria_id: string | null
+          data: string
+          descricao: string
+          frequencia_recorrente: string | null
+          id: string
+          recorrente: boolean | null
+          tipo: string
+          usuario_id: string | null
+          valor: number
+        }
+        Insert: {
+          categoria_id?: string | null
+          data: string
+          descricao: string
+          frequencia_recorrente?: string | null
+          id?: string
+          recorrente?: boolean | null
+          tipo: string
+          usuario_id?: string | null
+          valor: number
+        }
+        Update: {
+          categoria_id?: string | null
+          data?: string
+          descricao?: string
+          frequencia_recorrente?: string | null
+          id?: string
+          recorrente?: boolean | null
+          tipo?: string
+          usuario_id?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transacoes_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
