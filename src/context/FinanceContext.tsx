@@ -1,17 +1,18 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Transacao, Categoria, TipoTransacao, BalancoMensal, CategoriaSumario } from '@/types/finance';
+import { Transacao, Categoria, TipoTransacao, BalancoMensal, CategoriaSumario, Transaction, CategoryType, MonthlyBalance, CategorySummary } from '@/types/finance';
 import { useAuth } from './AuthContext';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 type FinanceContextType = {
   transacoes: Transacao[];
-  adicionarTransacao: (transacao: Omit<Transacao, 'id'>) => Promise<void>;
-  editarTransacao: (id: string, transacao: Partial<Transacao>) => Promise<void>;
+  adicionarTransacao: (transacao: Omit<Transacao, 'id' | 'usuario_id'>) => Promise<void>;
+  editarTransacao: (id: string, transacao: Partial<Omit<Transacao, 'id' | 'usuario_id'>>) => Promise<void>;
   deletarTransacao: (id: string) => Promise<void>;
   categorias: Categoria[];
-  adicionarCategoria: (categoria: Omit<Categoria, 'id'>) => Promise<void>;
-  editarCategoria: (id: string, categoria: Partial<Categoria>) => Promise<void>;
+  adicionarCategoria: (categoria: Omit<Categoria, 'id' | 'usuario_id'>) => Promise<void>;
+  editarCategoria: (id: string, categoria: Partial<Omit<Categoria, 'id' | 'usuario_id'>>) => Promise<void>;
   deletarCategoria: (id: string) => Promise<void>;
   getTransacoesPorMes: (mes: number, ano: number) => Transacao[];
   getBalancoMensal: (mes: number, ano: number) => BalancoMensal;
@@ -21,6 +22,23 @@ type FinanceContextType = {
   setMesAtual: (mes: number) => void;
   setAnoAtual: (ano: number) => void;
   getTransacoesRecorrentes: () => Transacao[];
+  // Aliases para compatibilidade com código existente
+  transactions: Transacao[];
+  addTransaction: (transaction: Omit<Transaction, 'id' | 'usuario_id'>) => Promise<void>;
+  editTransaction: (id: string, transaction: Partial<Omit<Transaction, 'id' | 'usuario_id'>>) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
+  categories: Categoria[];
+  addCategory: (category: Omit<CategoryType, 'id' | 'usuario_id'>) => Promise<void>;
+  editCategory: (id: string, category: Partial<Omit<CategoryType, 'id' | 'usuario_id'>>) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
+  getTransactionsByMonth: (month: number, year: number) => Transacao[];
+  getMonthlyBalance: (month: number, year: number) => BalancoMensal;
+  getCategorySummary: (month: number, year: number, type: TipoTransacao) => CategoriaSumario[];
+  currentMonth: number;
+  currentYear: number;
+  setCurrentMonth: (month: number) => void;
+  setCurrentYear: (year: number) => void;
+  getRecurringTransactions: () => Transacao[];
 };
 
 export const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -54,7 +72,13 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
-        setCategorias(data);
+        // Converter os dados do banco para o formato das categorias
+        const categoriasConvertidas = data.map(c => ({
+          ...c,
+          tipo: c.tipo as TipoTransacao
+        }));
+
+        setCategorias(categoriasConvertidas);
       };
 
       carregarCategorias();
@@ -80,22 +104,33 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
-        setTransacoes(data.map(t => ({
+        const transacoesConvertidas = data.map(t => ({
           ...t,
-          data: new Date(t.data)
-        })));
+          data: new Date(t.data),
+          tipo: t.tipo as TipoTransacao,
+          frequencia_recorrente: t.frequencia_recorrente as FrequenciaRecorrente | undefined
+        }));
+
+        setTransacoes(transacoesConvertidas);
       };
 
       carregarTransacoes();
     }
   }, [user, toast]);
 
-  const adicionarTransacao = async (transacao: Omit<Transacao, 'id'>) => {
+  const adicionarTransacao = async (transacao: Omit<Transacao, 'id' | 'usuario_id'>) => {
     if (!user) return;
+
+    // Converter data para formato ISO string para o Supabase
+    const transacaoParaInserir = {
+      ...transacao,
+      data: transacao.data.toISOString().split('T')[0], // formato YYYY-MM-DD
+      usuario_id: user.id
+    };
 
     const { data, error } = await supabase
       .from('transacoes')
-      .insert([transacao])
+      .insert([transacaoParaInserir])
       .select()
       .single();
 
@@ -108,7 +143,15 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    setTransacoes(prev => [{ ...data, data: new Date(data.data) }, ...prev]);
+    // Converter data de volta para objeto Date para a UI
+    const novaTransacao = {
+      ...data,
+      data: new Date(data.data),
+      tipo: data.tipo as TipoTransacao,
+      frequencia_recorrente: data.frequencia_recorrente as FrequenciaRecorrente | undefined
+    };
+
+    setTransacoes(prev => [novaTransacao, ...prev]);
     
     toast({
       title: transacao.tipo === 'receita' ? "Receita adicionada" : "Despesa adicionada",
@@ -116,10 +159,16 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const editarTransacao = async (id: string, transacao: Partial<Transacao>) => {
+  const editarTransacao = async (id: string, transacao: Partial<Omit<Transacao, 'id' | 'usuario_id'>>) => {
+    // Se tiver data, converter para formato ISO string
+    const transacaoParaAtualizar = {
+      ...transacao,
+      ...(transacao.data && { data: transacao.data.toISOString().split('T')[0] })
+    };
+
     const { error } = await supabase
       .from('transacoes')
-      .update(transacao)
+      .update(transacaoParaAtualizar)
       .eq('id', id);
 
     if (error) {
@@ -132,7 +181,12 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setTransacoes(prev => 
-      prev.map(t => (t.id === id ? { ...t, ...transacao } : t))
+      prev.map(t => {
+        if (t.id === id) {
+          return { ...t, ...transacao };
+        }
+        return t;
+      })
     );
     
     toast({
@@ -164,14 +218,17 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const adicionarCategoria = async (categoria: Omit<Categoria, 'id'>) => {
+  const adicionarCategoria = async (categoria: Omit<Categoria, 'id' | 'usuario_id'>) => {
     if (!user) return;
+    
+    const categoriaParaInserir = {
+      ...categoria,
+      usuario_id: user.id
+    };
     
     const { data, error } = await supabase
       .from('categorias')
-      .insert([
-        { ...categoria, usuario_id: user.id }
-      ])
+      .insert([categoriaParaInserir])
       .select()
       .single();
       
@@ -184,7 +241,12 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     
-    setCategorias(prev => [...prev, data]);
+    const novaCategoria = {
+      ...data,
+      tipo: data.tipo as TipoTransacao
+    };
+    
+    setCategorias(prev => [...prev, novaCategoria]);
     
     toast({
       title: "Categoria adicionada",
@@ -192,7 +254,7 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const editarCategoria = async (id: string, categoria: Partial<Categoria>) => {
+  const editarCategoria = async (id: string, categoria: Partial<Omit<Categoria, 'id' | 'usuario_id'>>) => {
     const { error } = await supabase
       .from('categorias')
       .update(categoria)
@@ -208,7 +270,12 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
     }
     
     setCategorias(prev => 
-      prev.map(c => (c.id === id ? { ...c, ...categoria } : c))
+      prev.map(c => {
+        if (c.id === id) {
+          return { ...c, ...categoria };
+        }
+        return c;
+      })
     );
     
     toast({
@@ -314,7 +381,24 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
       anoAtual,
       setMesAtual,
       setAnoAtual,
-      getTransacoesRecorrentes
+      getTransacoesRecorrentes,
+      // Aliases para compatibilidade
+      transactions: transacoes,
+      addTransaction: adicionarTransacao,
+      editTransaction: editarTransacao,
+      deleteTransaction: deletarTransacao,
+      categories: categorias,
+      addCategory: adicionarCategoria,
+      editCategory: editarCategoria,
+      deleteCategory: deletarCategoria,
+      getTransactionsByMonth: getTransacoesPorMes,
+      getMonthlyBalance: getBalancoMensal,
+      getCategorySummary: getCategoriaSumario,
+      currentMonth: mesAtual,
+      currentYear: anoAtual,
+      setCurrentMonth: setMesAtual,
+      setCurrentYear: setAnoAtual,
+      getRecurringTransactions: getTransacoesRecorrentes
     }}>
       {children}
     </FinanceContext.Provider>

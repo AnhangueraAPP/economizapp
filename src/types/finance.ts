@@ -10,6 +10,7 @@ export type Categoria = {
   icone?: string;
   tipo: TipoTransacao;
   padrao?: boolean;
+  usuario_id?: string;
 };
 
 export type Transacao = {
@@ -21,6 +22,7 @@ export type Transacao = {
   categoria_id: string;
   recorrente: boolean;
   frequencia_recorrente?: FrequenciaRecorrente;
+  usuario_id?: string;
 };
 
 export type Usuario = {
@@ -42,3 +44,12 @@ export type CategoriaSumario = {
   valor: number;
   porcentagem: number;
 };
+
+// Adicionando aliases para compatibilidade com código existente
+export type CategoryType = Categoria;
+export type Transaction = Transacao;
+export type MonthlyBalance = BalancoMensal;
+export type CategorySummary = CategoriaSumario;
+export type User = Usuario;
+export type TransactionType = TipoTransacao;
+export type RecurringFrequency = FrequenciaRecorrente;
