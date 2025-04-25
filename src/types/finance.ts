@@ -1,43 +1,44 @@
 
-export type TransactionType = 'income' | 'expense';
+export type TipoTransacao = 'receita' | 'despesa';
 
-export type CategoryType = {
+export type FrequenciaRecorrente = 'mensal' | 'semanal' | 'anual';
+
+export type Categoria = {
   id: string;
-  name: string;
-  color: string;
-  icon?: string;
-  isDefault?: boolean;
+  nome: string;
+  cor: string;
+  icone?: string;
+  tipo: TipoTransacao;
+  padrao?: boolean;
 };
 
-export type Transaction = {
+export type Transacao = {
   id: string;
-  amount: number;
-  type: TransactionType;
-  description: string;
-  date: Date;
-  categoryId: string;
-  isRecurring: boolean;
-  recurringFrequency?: 'monthly' | 'weekly' | 'yearly';
-  userId: string;
+  valor: number;
+  tipo: TipoTransacao;
+  descricao: string;
+  data: Date;
+  categoria_id: string;
+  recorrente: boolean;
+  frequencia_recorrente?: FrequenciaRecorrente;
 };
 
-export type User = {
+export type Usuario = {
   id: string;
   email: string;
-  name?: string;
-  categories: CategoryType[];
+  nome?: string;
 };
 
-export type MonthlyBalance = {
-  month: number;
-  year: number;
-  incomes: number;
-  expenses: number;
-  balance: number;
+export type BalancoMensal = {
+  mes: number;
+  ano: number;
+  receitas: number;
+  despesas: number;
+  saldo: number;
 };
 
-export type CategorySummary = {
-  categoryId: string;
-  amount: number;
-  percentage: number;
+export type CategoriaSumario = {
+  categoria_id: string;
+  valor: number;
+  porcentagem: number;
 };

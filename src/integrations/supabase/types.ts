@@ -9,7 +9,143 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      categorias: {
+        Row: {
+          atualizado_em: string | null
+          cor: string
+          criado_em: string | null
+          icone: string | null
+          id: string
+          nome: string
+          padrao: boolean | null
+          tipo: string
+          usuario_id: string
+        }
+        Insert: {
+          atualizado_em?: string | null
+          cor: string
+          criado_em?: string | null
+          icone?: string | null
+          id?: string
+          nome: string
+          padrao?: boolean | null
+          tipo: string
+          usuario_id: string
+        }
+        Update: {
+          atualizado_em?: string | null
+          cor?: string
+          criado_em?: string | null
+          icone?: string | null
+          id?: string
+          nome?: string
+          padrao?: boolean | null
+          tipo?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
+      logs_login: {
+        Row: {
+          data_login: string | null
+          id: string
+          ip: string | null
+          sucesso: boolean | null
+          user_agent: string | null
+          usuario_id: string
+        }
+        Insert: {
+          data_login?: string | null
+          id?: string
+          ip?: string | null
+          sucesso?: boolean | null
+          user_agent?: string | null
+          usuario_id: string
+        }
+        Update: {
+          data_login?: string | null
+          id?: string
+          ip?: string | null
+          sucesso?: boolean | null
+          user_agent?: string | null
+          usuario_id?: string
+        }
+        Relationships: []
+      }
+      perfis: {
+        Row: {
+          atualizado_em: string | null
+          criado_em: string | null
+          email: string | null
+          id: string
+          nome: string | null
+        }
+        Insert: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          email?: string | null
+          id: string
+          nome?: string | null
+        }
+        Update: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          email?: string | null
+          id?: string
+          nome?: string | null
+        }
+        Relationships: []
+      }
+      transacoes: {
+        Row: {
+          atualizado_em: string | null
+          categoria_id: string
+          criado_em: string | null
+          data: string
+          descricao: string
+          frequencia_recorrente: string | null
+          id: string
+          recorrente: boolean | null
+          tipo: string
+          usuario_id: string
+          valor: number
+        }
+        Insert: {
+          atualizado_em?: string | null
+          categoria_id: string
+          criado_em?: string | null
+          data: string
+          descricao: string
+          frequencia_recorrente?: string | null
+          id?: string
+          recorrente?: boolean | null
+          tipo: string
+          usuario_id: string
+          valor: number
+        }
+        Update: {
+          atualizado_em?: string | null
+          categoria_id?: string
+          criado_em?: string | null
+          data?: string
+          descricao?: string
+          frequencia_recorrente?: string | null
+          id?: string
+          recorrente?: boolean | null
+          tipo?: string
+          usuario_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transacoes_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
