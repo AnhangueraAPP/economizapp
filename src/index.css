@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,16 +14,16 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 160 84% 39%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 199 89% 48%;
+    --secondary-foreground: 210 40% 98%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
+    --accent: 160 51% 88%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
@@ -30,25 +31,18 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 160 84% 39%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
+    --sidebar-background: 160 51% 98%;
+    --sidebar-foreground: 160 51% 26.1%;
+    --sidebar-primary: 160 84% 39%;
     --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 160 51% 95.9%;
+    --sidebar-accent-foreground: 160 84% 39%;
+    --sidebar-border: 160 31% 91%;
+    --sidebar-ring: 160 84% 59.8%;
   }
 
   .dark {
@@ -61,16 +55,16 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
+    --primary: 160 84% 39%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 199 89% 48%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 160 51% 28%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -78,15 +72,16 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --ring: 160 84% 39%;
+
+    --sidebar-background: 160 84% 10%;
+    --sidebar-foreground: 160 51% 95.9%;
+    --sidebar-primary: 160 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 160 51% 15.9%;
+    --sidebar-accent-foreground: 160 51% 95.9%;
+    --sidebar-border: 160 51% 15.9%;
+    --sidebar-ring: 160 84% 59.8%;
   }
 }
 
@@ -97,5 +92,31 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .transaction-card {
+    @apply flex items-center justify-between p-4 rounded-md border mb-2 hover:bg-accent/20 transition-colors;
+  }
+  
+  .finance-input {
+    @apply w-full bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring;
+  }
+  
+  .finance-btn {
+    @apply px-4 py-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50;
+  }
+  
+  .finance-primary-btn {
+    @apply finance-btn bg-finance-primary text-white hover:bg-finance-dark;
+  }
+  
+  .finance-secondary-btn {
+    @apply finance-btn bg-finance-secondary text-white hover:bg-finance-dark;
+  }
+  
+  .finance-outline-btn {
+    @apply finance-btn bg-transparent border border-finance-primary text-finance-primary hover:bg-finance-light;
   }
 }
