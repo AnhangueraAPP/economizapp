@@ -1,4 +1,3 @@
-
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { MonthlyBalance, CategorySummary } from "@/types/finance";
 import { useFinance } from "@/context/FinanceContext";
@@ -30,12 +29,10 @@ export const DashboardStats = ({ monthlyBalance }: DashboardStatsProps) => {
     }).format(value);
   };
   
-  // Calculate percentage of expenses in relation to income
   const expensePercentage = monthlyBalance.incomes > 0
     ? (monthlyBalance.expenses / monthlyBalance.incomes) * 100
     : 0;
   
-  // Format the data for the pie chart
   const expenseChartData = expenseSummary.map(item => ({
     name: getCategoryName(item.categoryId),
     value: item.amount,
@@ -83,7 +80,7 @@ export const DashboardStats = ({ monthlyBalance }: DashboardStatsProps) => {
                 className={cn(
                   "h-2",
                   expensePercentage > 100 ? "bg-finance-expense" : "bg-finance-primary"
-                )} 
+                )}
               />
             </div>
           </div>
