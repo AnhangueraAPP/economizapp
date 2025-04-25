@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Check, ChevronsUpDown } from "lucide-react";
-import { Transaction, CategoryType, TransactionType } from "@/types/finance";
+import { Transacao, Categoria, transacaoToEnglish, categoriaToEnglish, englishToTransacao, mapTypeToTipo } from "@/types/finance";
 import { useFinance } from "@/context/FinanceContext";
 
 import { Button } from "@/components/ui/button";
@@ -58,9 +57,9 @@ const formSchema = z.object({
 });
 
 type TransactionFormProps = {
-  onSubmit: (data: Omit<Transaction, 'id' | 'userId'>) => void;
+  onSubmit: (data: any) => void;
   onCancel?: () => void;
-  initialData?: Partial<Transaction>;
+  initialData?: Partial<Transacao>;
   title?: string;
   submitLabel?: string;
 };
@@ -75,30 +74,38 @@ export const TransactionForm = ({
   const { categories } = useFinance();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  
+  // Converter dados em português para inglês
+  const initialDataEnglish = initialData ? transacaoToEnglish(initialData as Transacao) : undefined;
+  const categoriesEnglish = categories.map(categoriaToEnglish);
 
   // Filter categories based on transaction type
-  const [filteredCategories, setFilteredCategories] = useState<CategoryType[]>(
-    initialData?.type 
+  const [filteredCategories, setFilteredCategories] = useState<Categoria[]>(
+    initialDataEnglish?.type 
       ? categories.filter(c => {
-          if (initialData.type === 'income') {
-            return c.name === 'Salário' || c.name === 'Investimentos';
+          const categoryEnglish = categoriaToEnglish(c);
+          if (initialDataEnglish.type === 'income') {
+            return categoryEnglish.name === 'Salário' || categoryEnglish.name === 'Investimentos';
           } else {
-            return c.name !== 'Salário' && c.name !== 'Investimentos';
+            return categoryEnglish.name !== 'Salário' && categoryEnglish.name !== 'Investimentos';
           }
         })
-      : categories.filter(c => c.name !== 'Salário' && c.name !== 'Investimentos')
+      : categories.filter(c => {
+          const categoryEnglish = categoriaToEnglish(c);
+          return categoryEnglish.name !== 'Salário' && categoryEnglish.name !== 'Investimentos';
+        })
   );
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      amount: initialData?.amount?.toString() || "",
-      type: initialData?.type || "expense",
-      description: initialData?.description || "",
-      date: initialData?.date ? new Date(initialData.date) : new Date(),
-      categoryId: initialData?.categoryId || "",
-      isRecurring: initialData?.isRecurring || false,
-      recurringFrequency: initialData?.recurringFrequency || "monthly",
+      amount: initialDataEnglish?.amount?.toString() || "",
+      type: initialDataEnglish?.type || "expense",
+      description: initialDataEnglish?.description || "",
+      date: initialDataEnglish?.date ? new Date(initialDataEnglish.date) : new Date(),
+      categoryId: initialDataEnglish?.categoryId || "",
+      isRecurring: initialDataEnglish?.isRecurring || false,
+      recurringFrequency: initialDataEnglish?.recurringFrequency || "monthly",
     },
   });
   
@@ -106,20 +113,26 @@ export const TransactionForm = ({
   const watchIsRecurring = form.watch("isRecurring");
   
   // Update filtered categories when type changes
-  const handleTypeChange = (type: TransactionType) => {
+  const handleTypeChange = (type: "income" | "expense") => {
     form.setValue("type", type);
     form.setValue("categoryId", ""); // Reset category when type changes
     
-    if (type === "income") {
-      setFilteredCategories(categories.filter(c => c.name === 'Salário' || c.name === 'Investimentos'));
-    } else {
-      setFilteredCategories(categories.filter(c => c.name !== 'Salário' && c.name !== 'Investimentos'));
-    }
+    const filteredCats = categories.filter(c => {
+      const categoryEnglish = categoriaToEnglish(c);
+      if (type === "income") {
+        return categoryEnglish.name === 'Salário' || categoryEnglish.name === 'Investimentos';
+      } else {
+        return categoryEnglish.name !== 'Salário' && categoryEnglish.name !== 'Investimentos';
+      }
+    });
+    
+    setFilteredCategories(filteredCats);
   };
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     try {
-      const transaction: Omit<Transaction, 'id' | 'userId'> = {
+      // Construir objeto no formato em inglês que será convertido no componente pai
+      const transaction = {
         amount: parseFloat(values.amount),
         type: values.type,
         description: values.description,
@@ -158,55 +171,53 @@ export const TransactionForm = ({
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Type selector */}
-            <div className="flex items-center space-x-2 p-2 rounded-md border">
-              <div 
-                className={cn(
-                  "flex-1 cursor-pointer text-center p-2 rounded-md transition-colors",
-                  watchType === 'expense' 
-                    ? "bg-finance-expense text-white" 
-                    : "bg-gray-100 hover:bg-gray-200"
-                )}
-                onClick={() => handleTypeChange('expense')}
-              >
-                Despesa
-              </div>
-              <div 
-                className={cn(
-                  "flex-1 cursor-pointer text-center p-2 rounded-md transition-colors",
-                  watchType === 'income' 
-                    ? "bg-finance-income text-white" 
-                    : "bg-gray-100 hover:bg-gray-200"
-                )}
-                onClick={() => handleTypeChange('income')}
-              >
-                Receita
-              </div>
-            </div>
-
-            {/* Amount field */}
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Valor</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5">R$</span>
-                      <Input
-                        placeholder="0,00"
-                        className="pl-8"
-                        {...field}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+          {/* Type selector */}
+          <div className="flex items-center space-x-2 p-2 rounded-md border">
+            <div 
+              className={cn(
+                "flex-1 cursor-pointer text-center p-2 rounded-md transition-colors",
+                watchType === 'expense' 
+                  ? "bg-finance-expense text-white" 
+                  : "bg-gray-100 hover:bg-gray-200"
               )}
-            />
+              onClick={() => handleTypeChange('expense')}
+            >
+              Despesa
+            </div>
+            <div 
+              className={cn(
+                "flex-1 cursor-pointer text-center p-2 rounded-md transition-colors",
+                watchType === 'income' 
+                  ? "bg-finance-income text-white" 
+                  : "bg-gray-100 hover:bg-gray-200"
+              )}
+              onClick={() => handleTypeChange('income')}
+            >
+              Receita
+            </div>
           </div>
+
+          {/* Amount field */}
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Valor</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5">R$</span>
+                    <Input
+                      placeholder="0,00"
+                      className="pl-8"
+                      {...field}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           {/* Description field */}
           <FormField
@@ -285,7 +296,7 @@ export const TransactionForm = ({
                         )}
                       >
                         {field.value
-                          ? filteredCategories.find(
+                          ? categoriesEnglish.find(
                               (category) => category.id === field.value
                             )?.name
                           : "Selecione uma categoria"}
@@ -298,32 +309,35 @@ export const TransactionForm = ({
                       <CommandInput placeholder="Buscar categoria..." />
                       <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
                       <CommandGroup>
-                        {filteredCategories.map((category) => (
-                          <CommandItem
-                            key={category.id}
-                            value={category.name}
-                            onSelect={() => {
-                              form.setValue("categoryId", category.id);
-                              setOpen(false);
-                            }}
-                          >
-                            <div className="flex items-center">
-                              <div
-                                className="w-4 h-4 rounded-full mr-2"
-                                style={{ backgroundColor: category.color }}
-                              ></div>
-                              {category.name}
-                            </div>
-                            <Check
-                              className={cn(
-                                "ml-auto h-4 w-4",
-                                category.id === field.value
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              )}
-                            />
-                          </CommandItem>
-                        ))}
+                        {filteredCategories.map((category) => {
+                          const categoryEnglish = categoriaToEnglish(category);
+                          return (
+                            <CommandItem
+                              key={category.id}
+                              value={categoryEnglish.name}
+                              onSelect={() => {
+                                form.setValue("categoryId", category.id);
+                                setOpen(false);
+                              }}
+                            >
+                              <div className="flex items-center">
+                                <div
+                                  className="w-4 h-4 rounded-full mr-2"
+                                  style={{ backgroundColor: categoryEnglish.color }}
+                                ></div>
+                                {categoryEnglish.name}
+                              </div>
+                              <Check
+                                className={cn(
+                                  "ml-auto h-4 w-4",
+                                  category.id === field.value
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                            </CommandItem>
+                          );
+                        })}
                       </CommandGroup>
                     </Command>
                   </PopoverContent>

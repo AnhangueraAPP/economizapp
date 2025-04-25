@@ -27,7 +27,7 @@ const defaultCategories = [
 ];
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(() => {
+  const [user, setUser] = useState<Usuario | null>(() => {
     const savedUser = localStorage.getItem('financeUser');
     return savedUser ? JSON.parse(savedUser) : null;
   });

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Transaction, CategoryType } from "@/types/finance";
+import { Transacao, Categoria, categoriaToEnglish, transacaoToEnglish } from "@/types/finance";
 import { useFinance } from "@/context/FinanceContext";
 import { 
   Trash2, 
@@ -35,7 +35,7 @@ import {
 import { TransactionForm } from "./TransactionForm";
 
 type TransactionListProps = {
-  transactions: Transaction[];
+  transactions: Transacao[];
   title?: string;
 };
 
@@ -45,25 +45,26 @@ export const TransactionList = ({
 }: TransactionListProps) => {
   const { categories, deleteTransaction, editTransaction } = useFinance();
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<Transacao | null>(null);
   
   // Filter transactions based on search term
-  const filteredTransactions = transactions.filter(transaction => 
-    transaction.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTransactions = transactions.filter(transaction => {
+    const transacaoEnglish = transacaoToEnglish(transaction);
+    return transacaoEnglish.description.toLowerCase().includes(searchTerm.toLowerCase());
+  });
   
-  const handleEdit = (transaction: Transaction) => {
+  const handleEdit = (transaction: Transacao) => {
     setEditingTransaction(transaction);
   };
   
-  const handleUpdate = (data: Omit<Transaction, 'id' | 'userId'>) => {
+  const handleUpdate = (data: any) => {
     if (editingTransaction) {
       editTransaction(editingTransaction.id, data);
       setEditingTransaction(null);
     }
   };
   
-  const getCategoryById = (id: string): CategoryType | undefined => {
+  const getCategoryById = (id: string): Categoria | undefined => {
     return categories.find(category => category.id === id);
   };
   
@@ -85,41 +86,44 @@ export const TransactionList = ({
       {filteredTransactions.length > 0 ? (
         <ul className="divide-y">
           {filteredTransactions.map(transaction => {
-            const category = getCategoryById(transaction.categoryId);
+            const category = getCategoryById(transaction.categoria_id);
+            const transactionEnglish = transacaoToEnglish(transaction);
+            const categoryEnglish = category ? categoriaToEnglish(category) : undefined;
+            
             return (
               <li key={transaction.id} className="transaction-card">
                 <div className="flex items-center">
                   <div className={`
                     h-10 w-10 rounded-full flex items-center justify-center mr-3
-                    ${transaction.type === 'income' ? 'bg-finance-income/20' : 'bg-finance-expense/20'}
+                    ${transactionEnglish.type === 'income' ? 'bg-finance-income/20' : 'bg-finance-expense/20'}
                   `}>
-                    {transaction.type === 'income' ? (
+                    {transactionEnglish.type === 'income' ? (
                       <ArrowUp className="h-5 w-5 text-finance-income" />
                     ) : (
                       <ArrowDown className="h-5 w-5 text-finance-expense" />
                     )}
                   </div>
                   <div>
-                    <p className="font-medium">{transaction.description}</p>
+                    <p className="font-medium">{transactionEnglish.description}</p>
                     <div className="flex items-center text-sm text-muted-foreground">
                       <Calendar className="h-3 w-3 mr-1" />
-                      <span>{format(new Date(transaction.date), "dd/MM/yyyy", { locale: ptBR })}</span>
+                      <span>{format(transactionEnglish.date, "dd/MM/yyyy", { locale: ptBR })}</span>
                       
-                      {transaction.isRecurring && (
+                      {transactionEnglish.isRecurring && (
                         <div className="flex items-center ml-2">
                           <RefreshCw className="h-3 w-3 mr-1" />
-                          <span>{transaction.recurringFrequency === 'monthly' ? 'Mensal' : 
-                                transaction.recurringFrequency === 'weekly' ? 'Semanal' : 'Anual'}</span>
+                          <span>{transactionEnglish.recurringFrequency === 'monthly' ? 'Mensal' : 
+                                transactionEnglish.recurringFrequency === 'weekly' ? 'Semanal' : 'Anual'}</span>
                         </div>
                       )}
                       
-                      {category && (
+                      {categoryEnglish && (
                         <div className="ml-2 flex items-center">
                           <div 
                             className="h-3 w-3 rounded-full mr-1" 
-                            style={{ backgroundColor: category.color }}
+                            style={{ backgroundColor: categoryEnglish.color }}
                           ></div>
-                          <span>{category.name}</span>
+                          <span>{categoryEnglish.name}</span>
                         </div>
                       )}
                     </div>
@@ -128,10 +132,10 @@ export const TransactionList = ({
                 
                 <div className="flex items-center">
                   <span className={`text-lg font-semibold mr-4 ${
-                    transaction.type === 'income' ? 'text-finance-income' : 'text-finance-expense'
+                    transactionEnglish.type === 'income' ? 'text-finance-income' : 'text-finance-expense'
                   }`}>
-                    {transaction.type === 'income' ? '+' : '-'}
-                    R$ {transaction.amount.toFixed(2)}
+                    {transactionEnglish.type === 'income' ? '+' : '-'}
+                    R$ {transactionEnglish.amount.toFixed(2)}
                   </span>
                   
                   <div className="flex space-x-1">

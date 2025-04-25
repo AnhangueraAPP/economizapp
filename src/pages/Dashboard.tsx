@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -104,7 +103,6 @@ const Dashboard = () => {
   
   return (
     <div className="min-h-screen flex flex-col bg-muted">
-      {/* Header */}
       <header className="bg-white border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 h-16 flex justify-between items-center">
           <div className="flex items-center">
@@ -168,7 +166,7 @@ const Dashboard = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-1">
                   <User className="h-4 w-4" />
-                  <span className="hidden md:inline">{user.name || user.email.split('@')[0]}</span>
+                  <span className="hidden md:inline">{user.nome || user.email.split('@')[0]}</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -186,7 +184,6 @@ const Dashboard = () => {
       </header>
 
       <div className="flex flex-1">
-        {/* Sidebar - Desktop only */}
         <aside className="hidden md:block w-64 bg-white border-r">
           <div className="p-4 space-y-1">
             {sidebarItems.map((item) => (
@@ -203,7 +200,6 @@ const Dashboard = () => {
           </div>
         </aside>
 
-        {/* Main Content */}
         <main className="flex-1 p-4 overflow-auto">
           <div className="container mx-auto">
             <div className="mb-6">
@@ -257,7 +253,7 @@ const Dashboard = () => {
                       <div className="flex justify-between items-center p-3 rounded-md border">
                         <div>
                           <p className="font-medium">Nome</p>
-                          <p className="text-sm text-muted-foreground">{user.name || 'Não configurado'}</p>
+                          <p className="text-sm text-muted-foreground">{user.nome || 'Não configurado'}</p>
                         </div>
                       </div>
                     </div>
@@ -277,7 +273,6 @@ const Dashboard = () => {
         </main>
       </div>
       
-      {/* Add Transaction Dialog */}
       <Dialog open={isAddTransactionOpen} onOpenChange={setIsAddTransactionOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { CategoryType } from "@/types/finance";
+import { Categoria, CategoryTypeEnglish, categoriaToEnglish, mapTypeToTipo } from "@/types/finance";
 import { useFinance } from "@/context/FinanceContext";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,7 +46,10 @@ const formSchema = z.object({
 export const CategoryManager = () => {
   const { categories, addCategory, editCategory, deleteCategory } = useFinance();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<CategoryType | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Categoria | null>(null);
+  
+  // Convertemos as categorias para o formato em inglês para usar no formulário
+  const categoriesEnglish = categories.map(categoriaToEnglish);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -60,23 +63,26 @@ export const CategoryManager = () => {
     if (editingCategory) {
       editCategory(editingCategory.id, values);
     } else {
-      // Fixed: Ensure all required properties are provided to addCategory
+      // Adicionar nova categoria com tipo despesa por padrão
       addCategory({
         name: values.name,
         color: values.color,
-        // Add any other required properties from CategoryType
-        isDefault: false,
+        type: 'expense',
+        isDefault: false
       });
     }
     
     resetAndClose();
   };
   
-  const handleEdit = (category: CategoryType) => {
+  const handleEdit = (category: Categoria) => {
     setEditingCategory(category);
+    // Convertemos para o formato em inglês para o formulário
+    const categoryEnglish = categoriaToEnglish(category);
+    
     form.reset({
-      name: category.name,
-      color: category.color,
+      name: categoryEnglish.name,
+      color: categoryEnglish.color,
     });
     setIsDialogOpen(true);
   };
@@ -158,62 +164,67 @@ export const CategoryManager = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {categories.map((category) => (
-          <div
-            key={category.id}
-            className="flex justify-between items-center p-3 rounded-md border"
-          >
-            <div className="flex items-center">
-              <div
-                className="h-6 w-6 rounded-full mr-3"
-                style={{ backgroundColor: category.color }}
-              ></div>
-              <span className="font-medium">{category.name}</span>
-              {category.isDefault && (
-                <span className="text-xs ml-2 px-2 py-0.5 bg-muted rounded-full">Padrão</span>
-              )}
-            </div>
-            
-            <div className="flex space-x-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleEdit(category)}
-                disabled={category.isDefault}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
+        {categories.map((category) => {
+          // Convertemos para formato em inglês para exibição
+          const categoryEnglish = categoriaToEnglish(category);
+          
+          return (
+            <div
+              key={category.id}
+              className="flex justify-between items-center p-3 rounded-md border"
+            >
+              <div className="flex items-center">
+                <div
+                  className="h-6 w-6 rounded-full mr-3"
+                  style={{ backgroundColor: categoryEnglish.color }}
+                ></div>
+                <span className="font-medium">{categoryEnglish.name}</span>
+                {categoryEnglish.isDefault && (
+                  <span className="text-xs ml-2 px-2 py-0.5 bg-muted rounded-full">Padrão</span>
+                )}
+              </div>
               
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled={category.isDefault}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir categoria</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Tem certeza que deseja excluir esta categoria? Esta ação não pode ser desfeita.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => deleteCategory(category.id)}
+              <div className="flex space-x-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleEdit(category)}
+                  disabled={categoryEnglish.isDefault}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={categoryEnglish.isDefault}
                     >
-                      Sim, excluir
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir categoria</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tem certeza que deseja excluir esta categoria? Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deleteCategory(category.id)}
+                      >
+                        Sim, excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

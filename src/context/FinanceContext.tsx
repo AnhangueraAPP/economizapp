@@ -1,6 +1,10 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Transacao, Categoria, TipoTransacao, BalancoMensal, CategoriaSumario, Transaction, CategoryType, MonthlyBalance, CategorySummary } from '@/types/finance';
+import { 
+  Transacao, Categoria, TipoTransacao, BalancoMensal, CategoriaSumario, 
+  FrequenciaRecorrente, Usuario,
+  categoriaToEnglish, transacaoToEnglish, balancoToEnglish, sumarioToEnglish,
+  englishToCategoria, englishToTransacao, mapTypeToTipo, mapFrequencyToFrequencia
+} from '@/types/finance';
 import { useAuth } from './AuthContext';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,18 +26,18 @@ type FinanceContextType = {
   setMesAtual: (mes: number) => void;
   setAnoAtual: (ano: number) => void;
   getTransacoesRecorrentes: () => Transacao[];
-  // Aliases para compatibilidade com código existente
+  // API para componentes em inglês
   transactions: Transacao[];
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'usuario_id'>) => Promise<void>;
-  editTransaction: (id: string, transaction: Partial<Omit<Transaction, 'id' | 'usuario_id'>>) => Promise<void>;
+  addTransaction: (transaction: any) => Promise<void>;
+  editTransaction: (id: string, transaction: any) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   categories: Categoria[];
-  addCategory: (category: Omit<CategoryType, 'id' | 'usuario_id'>) => Promise<void>;
-  editCategory: (id: string, category: Partial<Omit<CategoryType, 'id' | 'usuario_id'>>) => Promise<void>;
+  addCategory: (category: any) => Promise<void>;
+  editCategory: (id: string, category: any) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
   getTransactionsByMonth: (month: number, year: number) => Transacao[];
   getMonthlyBalance: (month: number, year: number) => BalancoMensal;
-  getCategorySummary: (month: number, year: number, type: TipoTransacao) => CategoriaSumario[];
+  getCategorySummary: (month: number, year: number, type: TipoTransacao | 'income' | 'expense') => CategoriaSumario[];
   currentMonth: number;
   currentYear: number;
   setCurrentMonth: (month: number) => void;
@@ -364,6 +368,71 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
     return transacoes.filter(t => t.recorrente);
   };
 
+  const addTransaction = async (transaction: any) => {
+    // Converter de formato inglês para português
+    const transacao = englishToTransacao(transaction);
+    return await adicionarTransacao(transacao);
+  };
+
+  const editTransaction = async (id: string, transaction: any) => {
+    // Converter propriedades em inglês para português
+    const transacao: Partial<Omit<Transacao, 'id' | 'usuario_id'>> = {};
+    
+    if (transaction.amount !== undefined) transacao.valor = transaction.amount;
+    if (transaction.type !== undefined) transacao.tipo = mapTypeToTipo(transaction.type);
+    if (transaction.description !== undefined) transacao.descricao = transaction.description;
+    if (transaction.date !== undefined) transacao.data = transaction.date;
+    if (transaction.categoryId !== undefined) transacao.categoria_id = transaction.categoryId;
+    if (transaction.isRecurring !== undefined) transacao.recorrente = transaction.isRecurring;
+    if (transaction.recurringFrequency !== undefined) 
+      transacao.frequencia_recorrente = mapFrequencyToFrequencia(transaction.recurringFrequency);
+    
+    return await editarTransacao(id, transacao);
+  };
+
+  const deleteTransaction = async (id: string) => {
+    return await deletarTransacao(id);
+  };
+
+  const addCategory = async (category: any) => {
+    // Converter de formato inglês para português
+    const categoria: Omit<Categoria, 'id' | 'usuario_id'> = {
+      nome: category.name,
+      cor: category.color,
+      tipo: mapTypeToTipo(category.type || 'expense'),
+      padrao: category.isDefault || false,
+      icone: category.icon
+    };
+    
+    return await adicionarCategoria(categoria);
+  };
+
+  const editCategory = async (id: string, category: any) => {
+    // Converter propriedades em inglês para português
+    const categoria: Partial<Omit<Categoria, 'id' | 'usuario_id'>> = {};
+    
+    if (category.name !== undefined) categoria.nome = category.name;
+    if (category.color !== undefined) categoria.cor = category.color;
+    if (category.type !== undefined) categoria.tipo = mapTypeToTipo(category.type);
+    if (category.isDefault !== undefined) categoria.padrao = category.isDefault;
+    if (category.icon !== undefined) categoria.icone = category.icon;
+    
+    return await editarCategoria(id, categoria);
+  };
+
+  const deleteCategory = async (id: string) => {
+    return await deletarCategoria(id);
+  };
+
+  const getCategorySummary = (month: number, year: number, type: TipoTransacao | 'income' | 'expense') => {
+    // Converter 'income'/'expense' para 'receita'/'despesa' se necessário
+    const tipoTransacao = typeof type === 'string' && (type === 'income' || type === 'expense') 
+      ? mapTypeToTipo(type) 
+      : type as TipoTransacao;
+    
+    return getCategoriaSumario(month, year, tipoTransacao);
+  };
+
   return (
     <FinanceContext.Provider value={{
       transacoes,
@@ -384,16 +453,16 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
       getTransacoesRecorrentes,
       // Aliases para compatibilidade
       transactions: transacoes,
-      addTransaction: adicionarTransacao,
-      editTransaction: editarTransacao,
-      deleteTransaction: deletarTransacao,
+      addTransaction,
+      editTransaction,
+      deleteTransaction,
       categories: categorias,
-      addCategory: adicionarCategoria,
-      editCategory: editarCategoria,
-      deleteCategory: deletarCategoria,
+      addCategory,
+      editCategory,
+      deleteCategory,
       getTransactionsByMonth: getTransacoesPorMes,
       getMonthlyBalance: getBalancoMensal,
-      getCategorySummary: getCategoriaSumario,
+      getCategorySummary,
       currentMonth: mesAtual,
       currentYear: anoAtual,
       setCurrentMonth: setMesAtual,

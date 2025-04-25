@@ -1,12 +1,12 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { MonthlyBalance, CategorySummary } from "@/types/finance";
+import { BalancoMensal, CategoriaSumario, categoriaToEnglish, balancoToEnglish, sumarioToEnglish } from "@/types/finance";
 import { useFinance } from "@/context/FinanceContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
 type DashboardStatsProps = {
-  monthlyBalance: MonthlyBalance;
+  monthlyBalance: BalancoMensal;
 };
 
 export const DashboardStats = ({ monthlyBalance }: DashboardStatsProps) => {
@@ -14,12 +14,18 @@ export const DashboardStats = ({ monthlyBalance }: DashboardStatsProps) => {
   const expenseSummary = getCategorySummary(currentMonth, currentYear, 'expense');
   const incomeSummary = getCategorySummary(currentMonth, currentYear, 'income');
   
+  const monthlyBalanceEnglish = balancoToEnglish(monthlyBalance);
+  const categoriasEnglish = categories.map(categoriaToEnglish);
+  const expenseSummaryEnglish = expenseSummary.map(sumarioToEnglish);
+  
   const getCategoryName = (id: string) => {
-    return categories.find(c => c.id === id)?.name || 'Desconhecido';
+    const category = categoriasEnglish.find(c => c.id === id);
+    return category?.name || 'Desconhecido';
   };
   
   const getCategoryColor = (id: string) => {
-    return categories.find(c => c.id === id)?.color || '#6b7280';
+    const category = categoriasEnglish.find(c => c.id === id);
+    return category?.color || '#6b7280';
   };
   
   const formatCurrency = (value: number) => {
@@ -29,11 +35,11 @@ export const DashboardStats = ({ monthlyBalance }: DashboardStatsProps) => {
     }).format(value);
   };
   
-  const expensePercentage = monthlyBalance.incomes > 0
-    ? (monthlyBalance.expenses / monthlyBalance.incomes) * 100
+  const expensePercentage = monthlyBalanceEnglish.incomes > 0
+    ? (monthlyBalanceEnglish.expenses / monthlyBalanceEnglish.incomes) * 100
     : 0;
   
-  const expenseChartData = expenseSummary.map(item => ({
+  const expenseChartData = expenseSummaryEnglish.map(item => ({
     name: getCategoryName(item.categoryId),
     value: item.amount,
     color: getCategoryColor(item.categoryId),
@@ -51,22 +57,22 @@ export const DashboardStats = ({ monthlyBalance }: DashboardStatsProps) => {
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Receitas</span>
               <span className="text-lg font-medium text-finance-income">
-                {formatCurrency(monthlyBalance.incomes)}
+                {formatCurrency(monthlyBalanceEnglish.incomes)}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Despesas</span>
               <span className="text-lg font-medium text-finance-expense">
-                {formatCurrency(monthlyBalance.expenses)}
+                {formatCurrency(monthlyBalanceEnglish.expenses)}
               </span>
             </div>
             <div className="h-px bg-border my-2"></div>
             <div className="flex justify-between items-center">
               <span className="font-medium">Saldo</span>
               <span className={`text-xl font-bold ${
-                monthlyBalance.balance >= 0 ? 'text-finance-income' : 'text-finance-expense'
+                monthlyBalanceEnglish.balance >= 0 ? 'text-finance-income' : 'text-finance-expense'
               }`}>
-                {formatCurrency(monthlyBalance.balance)}
+                {formatCurrency(monthlyBalanceEnglish.balance)}
               </span>
             </div>
             
@@ -119,7 +125,7 @@ export const DashboardStats = ({ monthlyBalance }: DashboardStatsProps) => {
               </ResponsiveContainer>
               
               <div className="grid grid-cols-2 gap-2 mt-2">
-                {expenseSummary.slice(0, 4).map((item) => (
+                {expenseSummaryEnglish.slice(0, 4).map((item) => (
                   <div key={item.categoryId} className="flex items-center">
                     <div
                       className="w-3 h-3 rounded-full mr-2"
