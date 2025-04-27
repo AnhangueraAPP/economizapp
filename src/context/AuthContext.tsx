@@ -1,8 +1,8 @@
-
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { Usuario } from '@/types/finance';
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 
 type AuthContextType = {
   user: Usuario | null;
@@ -38,10 +38,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulando uma API de login
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Buscar usuário do localStorage (em produção, seria do backend)
       const users = JSON.parse(localStorage.getItem('financeUsers') || '[]');
       const foundUser = users.find((u: any) => u.email === email);
       
@@ -73,39 +71,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (email: string, password: string, name: string) => {
     setIsLoading(true);
     try {
-      // Simulando uma API de registro
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Verificar se o usuário já existe
-      const users = JSON.parse(localStorage.getItem('financeUsers') || '[]');
-      if (users.some((u: any) => u.email === email)) {
-        throw new Error('Este email já está registrado');
-      }
-      
-      // Criar novo usuário
-      const newUser = {
-        id: Date.now().toString(),
+      const { data: { user }, error } = await supabase.auth.signUp({
         email,
-        password, // Em produção, seria criptografado
-        name,
-        categories: defaultCategories
-      };
-      
-      // Salvar no localStorage (em produção, seria no backend)
-      users.push(newUser);
-      localStorage.setItem('financeUsers', JSON.stringify(users));
-      
-      // Fazer login automaticamente
-      const { password: _, ...userWithoutPassword } = newUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('financeUser', JSON.stringify(userWithoutPassword));
-      
-      toast({
-        title: "Registro realizado com sucesso",
-        description: "Sua conta foi criada e você já está logado!",
+        password,
+        options: {
+          data: {
+            name: name
+          }
+        }
       });
-      
-      navigate('/dashboard');
+
+      if (error) throw error;
+
+      if (user) {
+        setUser(user);
+        toast({
+          title: "Registro realizado com sucesso",
+          description: "Sua conta foi criada com sucesso!",
+        });
+        navigate('/dashboard');
+      }
     } catch (error) {
       toast({
         title: "Erro no registro",

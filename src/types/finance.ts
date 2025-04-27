@@ -1,4 +1,3 @@
-
 export type TipoTransacao = 'receita' | 'despesa';
 
 export type FrequenciaRecorrente = 'mensal' | 'semanal' | 'anual';
@@ -45,7 +44,13 @@ export type CategoriaSumario = {
   porcentagem: number;
 };
 
-// Adicionando aliases para compatibilidade com código existente
+export type Perfil = {
+  id: string;
+  nome: string | null;
+  email: string;
+  created_at: string;
+};
+
 export type CategoryType = Categoria;
 export type Transaction = Transacao;
 export type MonthlyBalance = BalancoMensal;
@@ -54,7 +59,6 @@ export type User = Usuario;
 export type TransactionType = TipoTransacao;
 export type RecurringFrequency = FrequenciaRecorrente;
 
-// Adicionando aliases para mapear entre propriedades em português e inglês
 export type CategoryTypeEnglish = {
   id: string;
   name: string;
@@ -91,7 +95,6 @@ export type CategorySummaryEnglish = {
   percentage: number;
 };
 
-// Funções de conversão
 export const mapTipoToType = (tipo: TipoTransacao): 'income' | 'expense' => {
   return tipo === 'receita' ? 'income' : 'expense';
 };
