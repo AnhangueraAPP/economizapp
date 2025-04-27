@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useForm } from "react-hook-form";
@@ -14,15 +13,23 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 
-const celularRegex = /^\([1-9]{2}\) (?:[2-8]|9[1-9])[0-9]{3}\-[0-9]{4}$/;
+const phoneRegex = /^[1-9][0-9]{10}$/;
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
   email: z.string().email({ message: "Email inválido" }),
-  celular: z.string().regex(celularRegex, { message: "Celular inválido. Use o formato (XX) XXXXX-XXXX" }),
+  countryCode: z.string().default("+55"),
+  celular: z.string().regex(phoneRegex, { message: "Celular inválido. Use apenas números, ex: 11999115655" }),
   password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
   confirmPassword: z.string().min(6, { message: "Confirme sua senha" }),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -39,6 +46,7 @@ export const RegisterForm = () => {
     defaultValues: {
       name: "",
       email: "",
+      countryCode: "+55",
       celular: "",
       password: "",
       confirmPassword: "",
@@ -46,7 +54,8 @@ export const RegisterForm = () => {
   });
   
   const onSubmit = async (values: z.infer<typeof registerSchema>) => {
-    await register(values.email, values.password, values.name, values.celular);
+    const formattedPhone = `${values.countryCode}${values.celular}`;
+    await register(values.email, values.password, values.name, formattedPhone);
   };
 
   return (
@@ -92,24 +101,49 @@ export const RegisterForm = () => {
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="celular"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Celular</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="(XX) XXXXX-XXXX"
-                    type="tel"
-                    autoComplete="tel"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="flex gap-2">
+            <FormField
+              control={form.control}
+              name="countryCode"
+              render={({ field }) => (
+                <FormItem className="w-24">
+                  <FormLabel>DDI</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="+55" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="+55">🇧🇷 +55</SelectItem>
+                      <SelectItem value="+351">🇵🇹 +351</SelectItem>
+                      <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="celular"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Celular</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="11999115655"
+                      type="tel"
+                      autoComplete="tel"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           
           <FormField
             control={form.control}
