@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { Usuario } from '@/types/finance';
 import { useToast } from "@/hooks/use-toast";
@@ -9,7 +8,7 @@ type AuthContextType = {
   user: Usuario | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, password: string, name: string, celular: string) => Promise<void>;
   logout: () => void;
 };
 
@@ -69,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (email: string, password: string, name: string, celular: string) => {
     setIsLoading(true);
     try {
       const { data: { user }, error } = await supabase.auth.signUp({
@@ -77,7 +76,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         password,
         options: {
           data: {
-            name: name
+            name: name,
+            celular: celular
           }
         }
       });
@@ -85,7 +85,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
 
       if (user) {
-        setUser(user);
+        const userWithPhone = {
+          ...user,
+          email: user.email!,
+          nome: name,
+          celular: celular
+        };
+        setUser(userWithPhone);
         toast({
           title: "Registro realizado com sucesso",
           description: "Sua conta foi criada com sucesso!",

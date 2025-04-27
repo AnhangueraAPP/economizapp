@@ -28,6 +28,7 @@ export type Usuario = {
   id: string;
   email: string;
   nome?: string;
+  celular: string;
 };
 
 export type BalancoMensal = {

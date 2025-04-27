@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useForm } from "react-hook-form";
@@ -16,9 +17,12 @@ import {
 import { Link } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 
+const celularRegex = /^\([1-9]{2}\) (?:[2-8]|9[1-9])[0-9]{3}\-[0-9]{4}$/;
+
 const registerSchema = z.object({
   name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
   email: z.string().email({ message: "Email inválido" }),
+  celular: z.string().regex(celularRegex, { message: "Celular inválido. Use o formato (XX) XXXXX-XXXX" }),
   password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
   confirmPassword: z.string().min(6, { message: "Confirme sua senha" }),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -35,15 +39,16 @@ export const RegisterForm = () => {
     defaultValues: {
       name: "",
       email: "",
+      celular: "",
       password: "",
       confirmPassword: "",
     },
   });
   
   const onSubmit = async (values: z.infer<typeof registerSchema>) => {
-    await register(values.email, values.password, values.name);
+    await register(values.email, values.password, values.name, values.celular);
   };
-  
+
   return (
     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-sm">
       <h1 className="text-2xl font-bold text-center mb-6">Criar conta</h1>
@@ -80,6 +85,25 @@ export const RegisterForm = () => {
                     type="email" 
                     autoComplete="email"
                     {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="celular"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Celular</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="(XX) XXXXX-XXXX"
+                    type="tel"
+                    autoComplete="tel"
+                    {...field}
                   />
                 </FormControl>
                 <FormMessage />
