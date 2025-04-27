@@ -1,3 +1,4 @@
+
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { BalancoMensal, CategoriaSumario, categoriaToEnglish, balancoToEnglish, sumarioToEnglish } from "@/types/finance";
 import { useFinance } from "@/context/FinanceContext";
@@ -15,8 +16,8 @@ export const DashboardStats = ({ monthlyBalance }: DashboardStatsProps) => {
   const incomeSummary = getCategorySummary(currentMonth, currentYear, 'income');
   
   const monthlyBalanceEnglish = balancoToEnglish(monthlyBalance);
-  const categoriasEnglish = categories.map(categoriaToEnglish);
-  const expenseSummaryEnglish = expenseSummary.map(sumarioToEnglish);
+  const categoriasEnglish = categories ? categories.map(categoriaToEnglish) : [];
+  const expenseSummaryEnglish = expenseSummary ? expenseSummary.map(sumarioToEnglish) : [];
   
   const getCategoryName = (id: string) => {
     const category = categoriasEnglish.find(c => c.id === id);
