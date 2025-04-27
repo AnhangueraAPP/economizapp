@@ -1,8 +1,9 @@
+
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { Usuario } from '@/types/finance';
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 type AuthContextType = {
   user: Usuario | null;
